@@ -165,16 +165,16 @@ tolerancias <- as.Date(c(
   "2023-12-26",  # 26 dezembro 2023
   "2024-01-02",  # 2 janeiro 2024
   "2024-02-13",  # Carnaval 2024
-  "2023-03-28",  # Quinta-feira santa 2024
+  "2024-03-28",  # Quinta-feira santa 2024
   "2024-12-24",  # véspera de Natal 2024
   "2024-12-31",  # véspera de Ano Novo 2024
   "2025-03-04",  # Carnaval 2025
-  "2023-04-17",  # Quinta-feira santa 2025
+  "2025-04-17",  # Quinta-feira santa 2025
   "2025-12-24",  # véspera de Natal 2025
   "2025-12-26",  # 26 dezembro 2025
   "2025-12-31",  # véspera de Ano Novo 2025
   "2026-02-17",  # Carnaval 2026
-  "2023-04-02",  # Quinta-feira santa 2026
+  "2026-04-02"  # Quinta-feira santa 2026
 ))
 
 cat("\nTolerâncias:\n")
@@ -211,8 +211,8 @@ tabela_mestra <- tabela_mestra %>%
     dow = wday(Data, week_start = 1),  # 1=Seg … 7=Dom (auxiliar)
     
     Feriado      = if_else(Data %in% todos_feriados, 1L, 0L),
-    Tolerancia   = if_else(Data %in% todas_tolerancias & Feriado == 0, 1L, 0L),
-    Ponte        = detectar_ponte(Data, todos_feriados, todas_tolerancias),
+    Tolerancia   = if_else(Data %in% tolerancias & Feriado == 0, 1L, 0L),
+    Ponte        = detectar_ponte(Data, todos_feriados, tolerancias),
     Segunda_Comum = if_else(dow == 1 & Feriado == 0 & Tolerancia == 0 & Ponte == 0, 1L, 0L),
     Sexta_Comum   = if_else(dow == 5 & Feriado == 0 & Tolerancia == 0 & Ponte == 0, 1L, 0L)
   ) %>%
