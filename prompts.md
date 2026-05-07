@@ -7,7 +7,7 @@ Este documento regista os prompts utilizados no projeto. Foram consultados difer
 ## 🤖 Gemini (Foco: definição da questão de investigação e pipeline de análise)
 ### 1. Definição da Questão de Investigação e Controlo de Confundimento
 **Prompt:**
-> "Estou a desenhar um estudo sobre a emissão de Autodeclarações de Doença (ADD) em Portugal e a sua relação com dias festivos. Utilizo dados diários de maio/2023 a janeiro/2026. Identifiquei que a sazonalidade das infeções respiratórias no inverno é um fator confundidor crítico. Como posso estruturar um modelo estatístico que isole o efeito de conveniência social (feriados/pontes) do efeito clínico (gripe), garantindo que os picos de ADD não são atribuídos erroneamente a feriados quando podem ser causados por surtos epidemiológicos expectáveis?"
+> "Estou a desenhar um estudo sobre a emissão de Autodeclarações de Doença (ADD) em Portugal e a sua relação com dias festivos. Utilizo dados diários de maio/2023 a janeiro/2026. Identifiquei que a sazonalidade das infeções respiratórias no inverno é um fator confundidor crítico. Como posso estruturar um modelo estatístico que isole o efeito de conveniência social (feriados/pontes/tolerâncias) do efeito clínico (proxy gripe), garantindo que os picos de ADD não são atribuídos erroneamente a feriados quando podem ser causados por surtos epidemiológicos expectáveis?"
 
 ### 2. Estrutura de Dados e Hierarquia de Variáveis (Pipeline)
 **Prompt:**
