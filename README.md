@@ -167,9 +167,7 @@ The Power BI dashboard (`dashboard/convenience_absenteeism.pbix`) allows:
 ## 🤖 LLM Usage
 
 See [`prompts.md`](prompts.md) for the complete record of:
-- All prompts submitted to Claude / ChatGPT
-- Full LLM responses
-- Critical comments by the authors on errors or limitations in LLM output
+- All prompts submitted to Gemini, Claude and ChatGPT
 
 We used LLMs to assist with (1) research question formulation, (2) data source identification, (3) methodology planning, and (4) code debugging — not to perform the analysis autonomously.
 
