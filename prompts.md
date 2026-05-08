@@ -19,9 +19,41 @@ Este documento regista os prompts utilizados no projeto. Foram consultados difer
 
 ---
 
-## 🤖 Claude (Foco: )
+## 🤖 Claude (Foco: Atualização das pipelines)
+### 1. Correção da deteção de pontes
+**Prompt:**
+> "[Secções 4 e 5 da pipeline original]" "Este código devolve 147 pontes. É demasiado? (considera Portugal)"
 
 ---
+### 2. Deteção de erros na pipeline original
+**Prompt:**
+> "És um revisor académico com background de data science e quero que revejas este código que tenta estimar economicamente o custo das autodeclarações de doença por coveniência"
+> "[Resultados do Ljung-Box test e do Box-Ljung test]"
+
+---
+### 3. Segunda versão da pipeline
+**Prompt:**
+> "Gera um código com as correções anteriormente mencionadas"
+
+---
+### 4. Teste de resíduos da v2
+**Prompt:**
+> "O teste de resíduos continua a não se ajustar ao modelo, mesmo quando se aumenta o k para 4 ou 5. Achas que uma reconstrução do modelo, adicionando as quartas feiras comuns e retirando as variáveis não significativas, poderia melhorar os testes de resíduos?"
+
+---
+### 5. Efeito das quartas-feiras
+**Prompt:**
+> "No entanto, acrescentei as quartas feiras ao modelo para testar e obtive valores significativos. Já que o máximo de dias das autodeclarações de doença são 3, esta relação pode indicar que as pessoas que pedem a declaração às quartas feiras o fazem por conveniência. Concordas?"
+> "Como enquadrar as quartas comuns e as quartas pre especiais na tabela mestra sem que façam overlap?"
+> "[Resultados dos coeficientes de interesse com a adição de quartas comuns e quartas pré especiais]"
+
+---
+### 5. Efeito das quartas-feiras
+**Prompt:**
+> "Como enquadrar as quartas comuns e as quartas pre especiais na tabela mestra sem que façam overlap?"
+> "[Resultados dos coeficientes de interesse com a adição de quartas comuns e quartas pré especiais]"
+
+
 
 ## 🤖 ChatGPT (Foco: )
 
