@@ -1,7 +1,7 @@
 # 🏥 Convenience Absenteeism in the Portuguese NHS
 ### Analysing Self-Declared Disease Notifications (ADD) from the SNS Transparency Portal
 
-> **Laboratory Project in Health Data Science** — Faculty of Medicine - University of Porto, 2026  
+> **Laboratory Project in Health Data Science** - Faculty of Medicine - University of Porto, 2026  
 > *Ana Correia · André Vicente · Filipa Carneiro*
 
 ---
