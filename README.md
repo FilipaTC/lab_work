@@ -8,7 +8,7 @@
 
 ## 📋 Research Question
 
-> *Are workers using the Self-Declared Disease Notification (ADD) system strategically — to extend weekends and bridge public holidays — rather than for genuine illness?*
+> *Are workers using the Self-Declared Disease Notification (ADD) system strategically - to extend weekends and bridge public holidays - rather than for genuine illness?*
 
 Since 2022, the SNS 24 app and portal allow Portuguese workers to self-declare up to 3 consecutive sick days without a doctor's appointment, up to twice per year. This project uses time-series modelling to **disentangle clinical demand (driven by the proxy flu) from behavioural demand (driven by calendar incentives)**.
 
