@@ -129,7 +129,7 @@ source("code/pipeline_sarimax_v3.R")
 
 ---
 
-## 📊 Key Results (Placeholders — update with model output)
+## 📊 Key Results
 
 | Variable | β | p-value | Interpretation |
 |---|---|---|---|
