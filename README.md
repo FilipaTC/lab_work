@@ -25,7 +25,8 @@ Since 2022, the SNS 24 app and portal allow Portuguese workers to self-declare u
 │   │   ├── grafico_perfil_semanal_v5.png
 │   │   ├── impacto_economico_v5.csv
 │   │   ├── outliers_identificados_v5.csv
-│   │   └── resultados_coeficientes_v5.csv
+│   │   ├── resultados_coeficientes_v5.csv
+│   │   └── resumo_cenarios_custo_v5.csv
 ├── README.md                          ← This file
 ├── prompts.md                         ← LLM interactions
 ├── data/
