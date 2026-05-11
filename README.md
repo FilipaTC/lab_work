@@ -23,6 +23,7 @@ Since 2022, the SNS 24 app and portal allow Portuguese workers to self-declare u
 │   ├── autodeclaracoes-de-doenca-dos-utentes.csv   ← ADD data (SNS Portal)
 │   └── atendimentos-nos-csp-gripe.csv              ← Flu consultations (SNS Portal)
 ├── code/
+│   ├── Project.R                      ← Original SARIMAX model
 │   ├── pipeline_sarimax_v2.R          ← SARIMAX model with calendar dummies
 │   └── pipeline_sarimax_v3.R          ← v3: outlier pass + Wednesday dummy + 5yr forecast
 ├── outputs/
