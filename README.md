@@ -18,7 +18,7 @@ Since 2022, the SNS 24 app and portal allow Portuguese workers to self-declare u
 
 ```
 ├── README.md                          ← This file
-├── prompts.md                         ← All LLM interactions (required)
+├── prompts.md                         ← LLM interactions
 ├── data/
 │   ├── autodeclaracoes-de-doenca-dos-utentes.csv   ← ADD data (SNS Portal)
 │   └── atendimentos-nos-csp-gripe.csv              ← Flu consultations (SNS Portal)
