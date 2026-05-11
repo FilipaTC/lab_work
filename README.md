@@ -99,7 +99,7 @@ Economic cost = Excess ADDs × €150 / day
 95% CI       = (β ± 1.96 × SE) × N_days × €150
 ```
 
-> ⚠️ **Assumption:** €150/day average labour cost per absent worker. This should be updated with sector-specific data from INE's *Inquérito ao Emprego* or employer records. Only statistically significant variables (p < 0.05) are interpreted causally.
+> ⚠️ **Assumption:** €150/day average labour cost per absent worker. Only statistically significant variables (p < 0.05) are interpreted causally.
 
 ---
 
@@ -157,9 +157,9 @@ The Power BI dashboard (`dashboard/convenience_absenteeism.pbix`) allows:
 ## ⚠️ Limitations
 
 - **No individual-level data** — aggregate counts only; association ≠ individual behaviour
-- **Labour cost assumption** — €120/day is a placeholder; results are sensitive to this
+- **Labour cost assumption** — €150/day is a placeholder; results are sensitive to this
 - **National aggregation** — regional heterogeneity is not modelled (dashboard shows differences)
-- **Short series** — ADD system started 2022 (~3–4 flu seasons), limiting forecast stability
+- **Short series** — ADD system started 2023 (~3–4 flu seasons), limiting forecast stability
 - **Unmeasured confounders** — remote work rates, sector mix, and age structure are not controlled
 - **Forecast uncertainty** — 5-year projections assume constant β and ADD growth trends
 
