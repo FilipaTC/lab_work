@@ -48,11 +48,9 @@ Este documento regista os prompts utilizados no projeto. Foram consultados difer
 > "[Resultados dos coeficientes de interesse com a adição de quartas comuns e quartas pré especiais]"
 
 ---
-### 5. Efeito das quartas-feiras
+### 6. Construção da v3
 **Prompt:**
-> "Como enquadrar as quartas comuns e as quartas pre especiais na tabela mestra sem que façam overlap?"
-> "[Resultados dos coeficientes de interesse com a adição de quartas comuns e quartas pré especiais]"
-
+> "Reescreve o código tendo em conta estes resultados e o problema dos resíduos."
 
 
 ## 🤖 ChatGPT (Foco: )
