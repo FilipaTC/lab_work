@@ -1,27 +1,27 @@
 # =============================================================================
-# PIPELINE SARIMAX v5 - An·lise de Absentismo por ConveniÍncia
-# Autores: Ana Correia, AndrÈ Vicente, Filipa Carneiro
+# PIPELINE SARIMAX v5 - An√°lise de Absentismo por Conveni√™ncia
+# Autores: Ana Correia, Andr√© Vicente, Filipa Carneiro
 # =============================================================================
-# ALTERA«’ES vs v4:
-#   [v5-1]  Retorno ‡ especificaÁ„o de dummies da v3 (melhor Ljung-Box/AIC)
-#   [v5-2]  Jan_Regresso e Dez_FimAno tornam-se ADITIVAS (n„o exclusivas):
+# ALTERA√á√ïES vs v4:
+#   [v5-1]  Retorno √† especifica√ß√£o de dummies da v3 (melhor Ljung-Box/AIC)
+#   [v5-2]  Jan_Regresso e Dez_FimAno tornam-se ADITIVAS (n√£o exclusivas):
 #           uma segunda de Janeiro tem Segunda_Comum=1 E Jan_Regresso=1,
 #           permitindo ao modelo estimar os dois efeitos em separado.
 #           Resolve o problema da v4 onde Primeira_Semana_Jan amputava
-#           o pool de segundas/quartas e eliminava a sua signific‚ncia.
+#           o pool de segundas/quartas e eliminava a sua signific√¢ncia.
 #   [v5-3]  Outliers pontuais reduzidos aos genuinamente isolados (3 datas)
-#           - Janeiro e Dezembro absorvidos pelas vari·veis aditivas.
-#   [v5-4]  Gr·fico 2 adaptativo: destaca Quarta apenas se significativa;
-#           caso contr·rio centra a narrativa na Segunda.
+#           - Janeiro e Dezembro absorvidos pelas vari√°veis aditivas.
+#   [v5-4]  Gr√°fico 2 adaptativo: destaca Quarta apenas se significativa;
+#           caso contr√°rio centra a narrativa na Segunda.
 #   [v5-5]  Contagem de dias corrigida: inclui Fim_Ano e Jan_Regresso
-#   [v5-6]  VerificaÁ„o explÌcita de que vari·veis aditivas n„o entram
+#   [v5-6]  Verifica√ß√£o expl√≠cita de que vari√°veis aditivas n√£o entram
 #           no check_overlap (overlap intencional e documentado)
 #   [v5-7]  Ordens max.p/q restauradas a 3 (consistente com v3)
 # =============================================================================
 
 
 # -----------------------------------------------------------------------------
-# 0. PACOTES NECESS¡RIOS
+# 0. PACOTES NECESS√ÅRIOS
 # -----------------------------------------------------------------------------
 pkgs <- c("tidyverse", "lubridate", "forecast", "tseries", "xts", "openxlsx")
 new_pkgs <- pkgs[!sapply(pkgs, requireNamespace, quietly = TRUE)]
@@ -53,25 +53,25 @@ glimpse(gripe_raw)
 
 
 # -----------------------------------------------------------------------------
-# 2. AGREGAR PARA NÕVEL DI¡RIO
+# 2. AGREGAR PARA N√çVEL DI√ÅRIO
 # -----------------------------------------------------------------------------
 add_clean <- add_raw %>%
   group_by(Data) %>%
-  summarise(ADD_Total = sum(`N∫ ADD Emitidas`, na.rm = TRUE), .groups = "drop") %>%
+  summarise(ADD_Total = sum(`N¬∫ ADD Emitidas`, na.rm = TRUE), .groups = "drop") %>%
   arrange(Data)
 
 gripe_clean <- gripe_raw %>%
-  mutate(Gripe_CSP_num = as.numeric(`N∫ Consultas Gripe nos CSP`)) %>%
-  group_by(Data = PerÌodo) %>%
+  mutate(Gripe_CSP_num = as.numeric(`N¬∫ Consultas Gripe nos CSP`)) %>%
+  group_by(Data = Per√≠odo) %>%
   summarise(Gripe_CSP = sum(Gripe_CSP_num, na.rm = TRUE), .groups = "drop") %>%
   arrange(Data)
 
 cat("\n--- ADD agregado ---\n")
-cat("PerÌodo:", format(min(add_clean$Data)), "a", format(max(add_clean$Data)), "\n")
-cat("N∫ dias:", nrow(add_clean), "\n")
+cat("Per√≠odo:", format(min(add_clean$Data)), "a", format(max(add_clean$Data)), "\n")
+cat("N¬∫ dias:", nrow(add_clean), "\n")
 cat("\n--- Gripe agregado ---\n")
-cat("PerÌodo:", format(min(gripe_clean$Data)), "a", format(max(gripe_clean$Data)), "\n")
-cat("N∫ dias:", nrow(gripe_clean), "\n")
+cat("Per√≠odo:", format(min(gripe_clean$Data)), "a", format(max(gripe_clean$Data)), "\n")
+cat("N¬∫ dias:", nrow(gripe_clean), "\n")
 
 
 # -----------------------------------------------------------------------------
@@ -90,9 +90,9 @@ tabela_mestra <- inner_join(add_clean, gripe_clean, by = "Data") %>%
   arrange(Data)
 
 cat("\n--- Tabela mestra ---\n")
-cat("PerÌodo:", format(min(tabela_mestra$Data)), "a",
+cat("Per√≠odo:", format(min(tabela_mestra$Data)), "a",
     format(max(tabela_mestra$Data)), "\n")
-cat("N∫ de dias:", nrow(tabela_mestra), "\n")
+cat("N¬∫ de dias:", nrow(tabela_mestra), "\n")
 
 if (sum(is.na(tabela_mestra$Gripe_CSP)) == 0) {
   cat("??? Sem valores em falta na coluna Gripe_CSP.\n")
@@ -123,10 +123,10 @@ feriados_fixos <- function(ano) {
     paste0(ano, "-04-25"),  # Liberdade
     paste0(ano, "-05-01"),  # Trabalho
     paste0(ano, "-06-10"),  # Portugal
-    paste0(ano, "-08-15"),  # AssunÁ„o
-    paste0(ano, "-10-05"),  # Rep˙blica
+    paste0(ano, "-08-15"),  # Assun√ß√£o
+    paste0(ano, "-10-05"),  # Rep√∫blica
     paste0(ano, "-11-01"),  # Todos os Santos
-    paste0(ano, "-12-01"),  # RestauraÁ„o
+    paste0(ano, "-12-01"),  # Restaura√ß√£o
     paste0(ano, "-12-08"),  # Imaculada
     paste0(ano, "-12-25")   # Natal
   ))
@@ -144,12 +144,12 @@ todos_feriados <- map(anos_modelo, ~ c(feriados_fixos(.x), feriados_moveis(.x)))
   as.Date(origin = "1970-01-01") %>%
   unique() %>% sort()
 
-cat("\nFeriados identificados no perÌodo:\n")
+cat("\nFeriados identificados no per√≠odo:\n")
 print(todos_feriados)
 
 
 # -----------------------------------------------------------------------------
-# 5. TOLER¬NCIAS DE PONTO (2023-2026)
+# 5. TOLER√ÇNCIAS DE PONTO (2023-2026)
 # -----------------------------------------------------------------------------
 tolerancias <- as.Date(c(
   "2023-02-21", "2023-04-06", "2023-12-26",
@@ -158,7 +158,7 @@ tolerancias <- as.Date(c(
   "2026-02-17", "2026-04-02"
 ))
 
-cat("\nToler‚ncias:\n"); print(tolerancias)
+cat("\nToler√¢ncias:\n"); print(tolerancias)
 
 
 # -----------------------------------------------------------------------------
@@ -166,32 +166,32 @@ cat("\nToler‚ncias:\n"); print(tolerancias)
 # -----------------------------------------------------------------------------
 # ARQUITECTURA DE DUMMIES - duas camadas independentes:
 #
-# CAMADA 1 - Mutuamente exclusivas (hierarquia rÌgida):
-#   Feriado > Toler‚ncia > Ponte > Pos_Feriado > Segunda_Comum > Quarta_Comum
-#   Cada dia pertence a no m·ximo uma categoria.
+# CAMADA 1 - Mutuamente exclusivas (hierarquia r√≠gida):
+#   Feriado > Toler√¢ncia > Ponte > Pos_Feriado > Segunda_Comum > Quarta_Comum
+#   Cada dia pertence a no m√°ximo uma categoria.
 #
-#   Pos_Feriado [NOVO]: dia ˙til (Seg-Sex) imediatamente a seguir a um
-#   feriado ou toler‚ncia, n„o classificado como feriado/toler‚ncia/ponte.
-#   MotivaÁ„o: na v5, os outliers pontuais de 2023-08-16, 2025-03-05,
-#   2025-04-22, 2025-06-11, 2025-12-02 e 2026-02-18 s„o todos dias
-#   imediatamente a seguir a feriados ou toler‚ncias - padr„o estrutural
-#   recorrente ("ressaca de feriado") que n„o deve ser tratado como outlier
+#   Pos_Feriado [NOVO]: dia √∫til (Seg-Sex) imediatamente a seguir a um
+#   feriado ou toler√¢ncia, n√£o classificado como feriado/toler√¢ncia/ponte.
+#   Motiva√ß√£o: na v5, os outliers pontuais de 2023-08-16, 2025-03-05,
+#   2025-04-22, 2025-06-11, 2025-12-02 e 2026-02-18 s√£o todos dias
+#   imediatamente a seguir a feriados ou toler√¢ncias - padr√£o estrutural
+#   recorrente ("ressaca de feriado") que n√£o deve ser tratado como outlier
 #   aditivo. A dummy captura este efeito de forma parcimoniousa.
 #
-# CAMADA 2 - Aditivas (sobreposiÁ„o intencional com Camada 1):
-#   Jan_Regresso : dias 2-10 de Janeiro (excl. feriados/toler‚ncias)
-#   Dez_FimAno   : dias 26-31 de Dezembro (excl. feriados/toler‚ncias)
+# CAMADA 2 - Aditivas (sobreposi√ß√£o intencional com Camada 1):
+#   Jan_Regresso : dias 2-10 de Janeiro (excl. feriados/toler√¢ncias)
+#   Dez_FimAno   : dias 26-31 de Dezembro (excl. feriados/toler√¢ncias)
 #   Um dia pode ter Segunda_Comum=1 E Jan_Regresso=1 simultaneamente.
 #   O modelo estima o efeito base da Segunda + o desvio de Janeiro.
-#   MotivaÁ„o: na v4, estas vari·veis eram exclusivas, o que amputava
-#   o pool de segundas/quartas e eliminava a sua signific‚ncia
+#   Motiva√ß√£o: na v4, estas vari√°veis eram exclusivas, o que amputava
+#   o pool de segundas/quartas e eliminava a sua signific√¢ncia
 #   (Quarta: ??=697???36). A abordagem aditiva preserva o pool completo.
 #
-# DECIS’ES ANTERIORES MANTIDAS:
-#   - Quarta_Pre_Especial: n„o significativa (p=0.146, v3) ??? fundida em
-#     Quarta_Comum. Efeito n„o condicionado ‡ proximidade de feriados.
-#   - Sexta_Comum: n„o significativa (p=0.167, ??=???139, v3) ??? removida.
-#     Sem valor estratÈgico - fds subsequente j· È n„o-˙til.
+# DECIS√ïES ANTERIORES MANTIDAS:
+#   - Quarta_Pre_Especial: n√£o significativa (p=0.146, v3) ??? fundida em
+#     Quarta_Comum. Efeito n√£o condicionado √† proximidade de feriados.
+#   - Sexta_Comum: n√£o significativa (p=0.167, ??=???139, v3) ??? removida.
+#     Sem valor estrat√©gico - fds subsequente j√° √© n√£o-√∫til.
 
 detectar_ponte <- function(data_vec, feriados, tolerancias) {
   todas_especiais <- c(feriados, tolerancias)
@@ -220,11 +220,11 @@ tabela_mestra <- tabela_mestra %>%
     Tolerancia = if_else(Data %in% tolerancias & Feriado == 0, 1L, 0L),
     Ponte      = detectar_ponte(Data, todos_feriados, tolerancias),
     
-    # Pos_Feriado: dia ˙til imediatamente apÛs feriado/toler‚ncia.
+    # Pos_Feriado: dia √∫til imediatamente ap√≥s feriado/toler√¢ncia.
     # Usa lookup directo por (Data - 1) - robusto a gaps no dataset
-    # (fins-de-semana, dias sem dados) ao contr·rio de lag().
+    # (fins-de-semana, dias sem dados) ao contr√°rio de lag().
     # Prioridade sobre Segunda_Comum e Quarta_Comum mas abaixo de Ponte
-    # (se o dia de ressaca for tambÈm ponte, prevalece Ponte).
+    # (se o dia de ressaca for tamb√©m ponte, prevalece Ponte).
     Pos_Feriado = if_else(
       dow %in% 1:5 &
         Feriado    == 0 &
@@ -255,7 +255,7 @@ tabela_mestra <- tabela_mestra %>%
     # --- CAMADA 2: aditivas - overlap intencional com Camada 1 ---
     
     # Jan_Regresso: desvio do comportamento de ADD nos dias 2-10 de Janeiro.
-    # N„o exclui segundas/quartas de Janeiro - o overlap È intencional.
+    # N√£o exclui segundas/quartas de Janeiro - o overlap √© intencional.
     Jan_Regresso = if_else(
       month(Data) == 1 & day(Data) %in% 2:10 &
         Feriado    == 0 &
@@ -264,8 +264,8 @@ tabela_mestra <- tabela_mestra %>%
     ),
     
     # Dez_FimAno: desvio dos dias 26-31 de Dezembro.
-    # Inclui fins-de-semana (padr„o de ressaca de Natal n„o È exclusivo
-    # de dias ˙teis).
+    # Inclui fins-de-semana (padr√£o de ressaca de Natal n√£o √© exclusivo
+    # de dias √∫teis).
     Dez_FimAno = if_else(
       month(Data) == 12 & day(Data) %in% 26:31 &
         Feriado    == 0 &
@@ -276,7 +276,7 @@ tabela_mestra <- tabela_mestra %>%
   select(-dow)
 
 
-# --- VerificaÁıes ---
+# --- Verifica√ß√µes ---
 
 # Camada 1: nenhum dia deve ter soma > 1
 check_overlap <- tabela_mestra %>%
@@ -287,7 +287,7 @@ check_overlap <- tabela_mestra %>%
 if (nrow(check_overlap) == 0) {
   cat("\n??? Sem overlaps nas dummies mutuamente exclusivas (Camada 1).\n")
 } else {
-  cat("\n??????  ATEN«√O: overlaps na Camada 1 em", nrow(check_overlap), "dias!\n")
+  cat("\n??????  ATEN√á√ÉO: overlaps na Camada 1 em", nrow(check_overlap), "dias!\n")
   print(check_overlap)
 }
 
@@ -304,8 +304,8 @@ tabela_mestra %>%
   ) %>%
   print()
 
-# DistribuiÁ„o completa
-cat("\nDistribuiÁ„o de todas as dummies:\n")
+# Distribui√ß√£o completa
+cat("\nDistribui√ß√£o de todas as dummies:\n")
 tabela_mestra %>%
   summarise(across(
     c(Feriado, Tolerancia, Ponte, Pos_Feriado,
@@ -314,7 +314,7 @@ tabela_mestra %>%
   )) %>%
   print()
 
-# InspecÁ„o dos dias classificados como Pos_Feriado
+# Inspec√ß√£o dos dias classificados como Pos_Feriado
 cat("\nDias Pos_Feriado (primeiros 20):\n")
 tabela_mestra %>%
   filter(Pos_Feriado == 1) %>%
@@ -323,15 +323,15 @@ tabela_mestra %>%
     ontem      = Data - 1,
     tipo_ontem = case_when(
       ontem %in% todos_feriados ~ "Feriado",
-      ontem %in% tolerancias   ~ "Toler‚ncia",
+      ontem %in% tolerancias   ~ "Toler√¢ncia",
       TRUE                     ~ "Outro"
     )
   ) %>%
   select(Data, dow_label, ontem, tipo_ontem, ADD_Total) %>%
   print(n = 20)
 
-# CorrelaÁıes entre regressores
-cat("\nMatriz de correlaÁ„o dos regressores:\n")
+# Correla√ß√µes entre regressores
+cat("\nMatriz de correla√ß√£o dos regressores:\n")
 tabela_mestra %>%
   select(Gripe_CSP, Feriado, Tolerancia, Ponte, Pos_Feriado,
          Segunda_Comum, Quarta_Comum, Jan_Regresso, Dez_FimAno) %>%
@@ -346,11 +346,11 @@ cat("\n??? Tabela mestra guardada: tabela_mestra_ADD.csv\n")
 
 
 # -----------------------------------------------------------------------------
-# 8. PREPARAR S…RIE TEMPORAL E REGRESSORES BASE
+# 8. PREPARAR S√âRIE TEMPORAL E REGRESSORES BASE
 # -----------------------------------------------------------------------------
 y_semanal <- ts(tabela_mestra$ADD_Total, frequency = 7)
 
-# Todas as vari·veis: Camada 1 + Camada 2   [v5-5]
+# Todas as vari√°veis: Camada 1 + Camada 2   [v5-5]
 xreg_base <- tabela_mestra %>%
   select(Gripe_CSP, Feriado, Tolerancia, Ponte, Pos_Feriado,
          Segunda_Comum, Quarta_Comum,
@@ -369,10 +369,10 @@ xreg_1a_passagem <- cbind(xreg_base, fourier_terms)
 xreg_1a_passagem <- apply(xreg_1a_passagem, 2, as.numeric)
 
 stopifnot(
-  "xreg e y tÍm n∫ de linhas diferentes!" =
+  "xreg e y t√™m n¬∫ de linhas diferentes!" =
     nrow(xreg_1a_passagem) == length(y_semanal)
 )
-cat("\n??? Alinhamento xreg/y confirmado:", nrow(xreg_1a_passagem), "observaÁıes.\n")
+cat("\n??? Alinhamento xreg/y confirmado:", nrow(xreg_1a_passagem), "observa√ß√µes.\n")
 
 
 # -----------------------------------------------------------------------------
@@ -384,17 +384,17 @@ print(adf_result)
 
 
 # -----------------------------------------------------------------------------
-# 11. 1™ PASSAGEM - identificar outliers residuais
+# 11. 1¬™ PASSAGEM - identificar outliers residuais
 # -----------------------------------------------------------------------------
 # [v5-3] Com Jan_Regresso e Dez_FimAno aditivas, esperamos que os outliers
 # de Janeiro e Dezembro sejam absorvidos. Apenas outliers genuinamente
-# pontuais (sem padr„o recorrente) ser„o adicionados ao modelo final.
+# pontuais (sem padr√£o recorrente) ser√£o adicionados ao modelo final.
 #
-# Triagem: correcÁ„o de Bonferroni para controlar false discovery rate
-# com m˙ltiplos testes simult‚neos.
+# Triagem: correc√ß√£o de Bonferroni para controlar false discovery rate
+# com m√∫ltiplos testes simult√¢neos.
 
 set.seed(42)
-cat("\n??? 1™ passagem: a identificar outliers (pode demorar 3-8 min)...\n")
+cat("\n??? 1¬™ passagem: a identificar outliers (pode demorar 3-8 min)...\n")
 
 modelo_1a <- auto.arima(
   y_semanal,
@@ -411,12 +411,12 @@ sigma_1a    <- sd(residuos_1a)
 limiar      <- 3 * sigma_1a
 outlier_dates <- tabela_mestra$Data[abs(residuos_1a) > limiar]
 
-cat("\n--- Outliers residuais (|resÌduo| >", round(limiar, 1), ") ---\n")
+cat("\n--- Outliers residuais (|res√≠duo| >", round(limiar, 1), ") ---\n")
 cat(length(outlier_dates), "dias identificados.\n")
 
 if (length(outlier_dates) > 0) {
   
-  # Triagem individual com correcÁ„o de Bonferroni
+  # Triagem individual com correc√ß√£o de Bonferroni
   testes_outlier <- map_dfr(outlier_dates, function(d) {
     res_outlier <- as.numeric(residuos_1a)[tabela_mestra$Data == d]
     t_val <- res_outlier / sigma_1a
@@ -424,7 +424,7 @@ if (length(outlier_dates) > 0) {
     tibble(
       data         = d,
       dow_n        = wday(d, week_start = 1),
-      dow_label    = c("Seg","Ter","Qua","Qui","Sex","S·b","Dom")[wday(d, week_start=1)],
+      dow_label    = c("Seg","Ter","Qua","Qui","Sex","S√°b","Dom")[wday(d, week_start=1)],
       Jan_Regresso = as.integer(month(d) == 1 & day(d) %in% 2:10),
       Dez_FimAno   = as.integer(month(d) == 12 & day(d) %in% 26:31),
       Pos_Feriado = tabela_mestra$Pos_Feriado[
@@ -433,7 +433,7 @@ if (length(outlier_dates) > 0) {
       residuo      = res_outlier,
       sigma_n      = round(res_outlier / sigma_1a, 1),
       p_value      = p_val,
-      # [v5-3] Bonferroni: sÛ incluir se p < ??/n E n„o coberto por aditivas
+      # [v5-3] Bonferroni: s√≥ incluir se p < ??/n E n√£o coberto por aditivas
       sig_bonf     = p_val < (0.05 / length(outlier_dates)),
       coberto      = (month(d) == 1 & day(d) %in% 2:10) |
         (month(d) == 12 & day(d) %in% 26:31),
@@ -455,7 +455,7 @@ if (length(outlier_dates) > 0) {
   cat("\nOutliers pontuais a incluir:", length(outlier_sig_dates), "\n")
   if (length(outlier_sig_dates) > 0) print(outlier_sig_dates)
   
-  cat("Outliers cobertos por Jan_Regresso/Dez_FimAno (excluÌdos):",
+  cat("Outliers cobertos por Jan_Regresso/Dez_FimAno (exclu√≠dos):",
       sum(testes_outlier$coberto & testes_outlier$sig_bonf), "\n")
   
   if (length(outlier_sig_dates) > 0) {
@@ -482,17 +482,17 @@ if (length(outlier_dates) > 0) {
 
 xreg_final <- apply(xreg_final, 2, as.numeric)
 stopifnot(
-  "xreg_final e y tÍm n∫ de linhas diferentes!" =
+  "xreg_final e y t√™m n¬∫ de linhas diferentes!" =
     nrow(xreg_final) == length(y_semanal)
 )
 cat("\n??? xreg_final pronto:", ncol(xreg_final), "colunas.\n")
 
 
 # -----------------------------------------------------------------------------
-# 12. 2™ PASSAGEM - MODELO FINAL
+# 12. 2¬™ PASSAGEM - MODELO FINAL
 # -----------------------------------------------------------------------------
 set.seed(42)
-cat("\n??? 2™ passagem: modelo final (pode demorar 3-8 min)...\n")
+cat("\n??? 2¬™ passagem: modelo final (pode demorar 3-8 min)...\n")
 
 modelo_sarimax <- auto.arima(
   y_semanal,
@@ -509,13 +509,13 @@ summary(modelo_sarimax)
 
 arma_ord      <- arimaorder(modelo_sarimax)
 n_params_arma <- arma_ord["p"] + arma_ord["q"] + arma_ord["P"] + arma_ord["Q"]
-cat("\nPar‚metros ARMA (fitdf para Ljung-Box):", n_params_arma, "\n")
+cat("\nPar√¢metros ARMA (fitdf para Ljung-Box):", n_params_arma, "\n")
 
 
 # -----------------------------------------------------------------------------
-# 13. DIAGN”STICO DOS RESÕDUOS
+# 13. DIAGN√ìSTICO DOS RES√çDUOS
 # -----------------------------------------------------------------------------
-cat("\n--- DiagnÛstico dos resÌduos ---\n")
+cat("\n--- Diagn√≥stico dos res√≠duos ---\n")
 checkresiduals(modelo_sarimax)
 
 lb_test <- Box.test(
@@ -528,33 +528,33 @@ cat("\n--- Ljung-Box corrigido (lag=14, fitdf =", n_params_arma, ") ---\n")
 print(lb_test)
 
 if (lb_test$p.value > 0.05) {
-  cat("??? ResÌduos consistentes com ruÌdo branco (p =",
+  cat("??? Res√≠duos consistentes com ru√≠do branco (p =",
       round(lb_test$p.value, 4), ")\n")
 } else {
-  cat("??????  AutocorrelaÁ„o residual presente (p =",
+  cat("??????  Autocorrela√ß√£o residual presente (p =",
       round(lb_test$p.value, 4), ")\n")
-  cat("   Nota metodolÛgica para o paper:\n")
-  cat("   'Apesar da inclus„o de termos de Fourier, vari·veis sazonais\n")
-  cat("    aditivas para os perÌodos de Janeiro e Dezembro, e correcÁ„o\n")
-  cat("    de outliers pontuais, os resÌduos apresentam autocorrelaÁ„o\n")
+  cat("   Nota metodol√≥gica para o paper:\n")
+  cat("   'Apesar da inclus√£o de termos de Fourier, vari√°veis sazonais\n")
+  cat("    aditivas para os per√≠odos de Janeiro e Dezembro, e correc√ß√£o\n")
+  cat("    de outliers pontuais, os res√≠duos apresentam autocorrela√ß√£o\n")
   cat("    moderada (Ljung-Box p =", round(lb_test$p.value, 3), "),\n")
-  cat("    possivelmente devida a instabilidade estrutural no perÌodo\n")
-  cat("    pÛs-COVID. As estimativas s„o consideradas conservadoras.'\n")
+  cat("    possivelmente devida a instabilidade estrutural no per√≠odo\n")
+  cat("    p√≥s-COVID. As estimativas s√£o consideradas conservadoras.'\n")
 }
 
 # Drift
 coefs_todos <- coef(modelo_sarimax)
 if ("drift" %in% names(coefs_todos)) {
   drift_val <- coefs_todos["drift"]
-  cat(sprintf("\n--- TendÍncia (drift) ---\n%.2f ADD adicionais por dia.\n", drift_val))
+  cat(sprintf("\n--- Tend√™ncia (drift) ---\n%.2f ADD adicionais por dia.\n", drift_val))
   if (drift_val > 0) {
-    cat("   ??????  TendÍncia crescente estrutural - discutir nos resultados.\n")
+    cat("   ??????  Tend√™ncia crescente estrutural - discutir nos resultados.\n")
   }
 }
 
 
 # -----------------------------------------------------------------------------
-# 14. COEFICIENTES ?? - VARI¡VEIS DE INTERESSE
+# 14. COEFICIENTES ?? - VARI√ÅVEIS DE INTERESSE
 # -----------------------------------------------------------------------------
 coefs <- coef(modelo_sarimax)
 se    <- sqrt(diag(vcov(modelo_sarimax)))
@@ -584,40 +584,40 @@ resultados_beta <- tibble(
 cat("\n=== COEFICIENTES DE INTERESSE ===\n")
 print(resultados_beta, n = Inf)
 
-# Nota metodolÛgica sobre Ponte se positiva
+# Nota metodol√≥gica sobre Ponte se positiva
 ponte_beta <- resultados_beta$Beta[resultados_beta$Variavel == "Ponte"]
 if (length(ponte_beta) > 0 && !is.na(ponte_beta) && ponte_beta > 0) {
   cat(sprintf(
     "\n--- Nota: ??_Ponte = +%.0f ---\n", ponte_beta
   ))
-  cat("   AmbÌguo: (a) conveniÍncia - prolongar ausÍncia alÈm da ponte;\n")
-  cat("   (b) confundimento - maior procura de consultas prÈ-feriado.\n")
-  cat("   IndistinguÌvel sem dados de hora/duraÁ„o da ADD. Declarar no paper.\n")
+  cat("   Amb√≠guo: (a) conveni√™ncia - prolongar aus√™ncia al√©m da ponte;\n")
+  cat("   (b) confundimento - maior procura de consultas pr√©-feriado.\n")
+  cat("   Indistingu√≠vel sem dados de hora/dura√ß√£o da ADD. Declarar no paper.\n")
 }
 
 nas_coef <- resultados_beta %>% filter(is.na(Beta))
 if (nrow(nas_coef) > 0) {
-  cat("\n??????  Coeficientes NA (possÌvel colinearidade):", nas_coef$Variavel, "\n")
+  cat("\n??????  Coeficientes NA (poss√≠vel colinearidade):", nas_coef$Variavel, "\n")
 }
 
 
 # -----------------------------------------------------------------------------
-# 15. IMPACTO ECON”MICO
+# 15. IMPACTO ECON√ìMICO
 # -----------------------------------------------------------------------------
 # PRESSUPOSTOS (documentar na metodologia):
-#   - custo_dia_euros: INE, InquÈrito ao Emprego - custo hor·rio mÈdio ◊ 8h.
-#   - Cada ADD de conveniÍncia = 1 dia de ausÍncia (limite m·ximo ADD = 3 dias).
-#   - ClassificaÁ„o: ??>0 e p<0.05 ??? ConveniÍncia; ??<0 e p<0.05 ??? Supressor.
-#   - IC95% propagado pelo mÈtodo delta (±1.96 ◊ SE ◊ N_dias).
-#   - Vari·veis aditivas (Jan_Regresso, Dez_FimAno) entram no impacto
-#     com o seu N_dias prÛprio, independentemente das Segundas/Quartas.
+#   - custo_dia_euros: INE, Inqu√©rito ao Emprego - custo hor√°rio m√©dio √ó 8h.
+#   - Cada ADD de conveni√™ncia = 1 dia de aus√™ncia (limite m√°ximo ADD = 3 dias).
+#   - Classifica√ß√£o: ??>0 e p<0.05 ??? Conveni√™ncia; ??<0 e p<0.05 ??? Supressor.
+#   - IC95% propagado pelo m√©todo delta (¬±1.96 √ó SE √ó N_dias).
+#   - Vari√°veis aditivas (Jan_Regresso, Dez_FimAno) entram no impacto
+#     com o seu N_dias pr√≥prio, independentemente das Segundas/Quartas.
 
 cenarios_custo <- tibble(
-  Cenario   = c("Conservador", "Central", "M·ximo"),
+  Cenario   = c("Conservador", "Central", "M√°ximo"),
   custo_dia = c(100, 150, 200)
 )
 
-# [v5-5] contagem_dias inclui todas as vari·veis do modelo
+# [v5-5] contagem_dias inclui todas as vari√°veis do modelo
 contagem_dias <- tabela_mestra %>%
   summarise(
     Feriado       = sum(Feriado),
@@ -639,9 +639,9 @@ impacto_base <- resultados_beta %>%
     ADD_exc_lb        = (Beta - 1.96 * SE) * N_dias,
     ADD_exc_ub        = (Beta + 1.96 * SE) * N_dias,
     Tipo = case_when(
-      Beta > 0 & p_value < 0.05 ~ "ConveniÍncia",
+      Beta > 0 & p_value < 0.05 ~ "Conveni√™ncia",
       Beta < 0 & p_value < 0.05 ~ "Supressor",
-      TRUE                       ~ "N„o significativo"
+      TRUE                       ~ "N√£o significativo"
     )
   )
 
@@ -662,10 +662,10 @@ impacto_economico <- map_dfr(
          ADD_excedentarias, ADD_exc_lb, ADD_exc_ub,
          Custo_euros, Custo_euros_lb, Custo_euros_ub)
 
-cat("\n=== IMPACTO ECON”MICO POR CEN¡RIO ===\n")
+cat("\n=== IMPACTO ECON√ìMICO POR CEN√ÅRIO ===\n")
 print(impacto_economico, n = Inf)
 
-cat("\n=== TOTAIS POR TIPO DE EFEITO (cen·rio Central) ===\n")
+cat("\n=== TOTAIS POR TIPO DE EFEITO (cen√°rio Central) ===\n")
 impacto_economico %>%
   filter(Cenario == "Central") %>%
   group_by(Tipo) %>%
@@ -680,9 +680,9 @@ impacto_economico %>%
   ) %>%
   print()
 
-cat("\n=== CUSTO DE CONVENI NCIA POR CEN¡RIO (apenas ??>0 significativos) ===\n")
+cat("\n=== CUSTO DE CONVENI√äNCIA POR CEN√ÅRIO (apenas ??>0 significativos) ===\n")
 resumo_cenarios <- impacto_economico %>%
-  filter(Tipo == "ConveniÍncia") %>%
+  filter(Tipo == "Conveni√™ncia") %>%
   group_by(Cenario, custo_dia) %>%
   summarise(
     ADD_conv = sum(ADD_excedentarias),
@@ -705,14 +705,14 @@ resumo_cenarios %>%
 
 
 # -----------------------------------------------------------------------------
-# 16. GR¡FICO 1 - Real vs Previsto
+# 16. GR√ÅFICO 1 - Real vs Previsto
 # -----------------------------------------------------------------------------
 fitted_completo <- fitted(modelo_sarimax)
 
 coefs_cal <- coefs[intersect(vars_interesse, names(coefs))]
 coefs_cal[is.na(coefs_cal)] <- 0
 
-# Remover contribuiÁ„o de todas as vari·veis de calend·rio do baseline clÌnico
+# Remover contribui√ß√£o de todas as vari√°veis de calend√°rio do baseline cl√≠nico
 baseline_clinico <- as.numeric(fitted_completo)
 for (v in names(coefs_cal)[names(coefs_cal) != "Gripe_CSP"]) {
   if (v %in% names(tabela_mestra)) {
@@ -727,7 +727,7 @@ plot_data <- tabela_mestra %>%
     Baseline_Clinico = baseline_clinico,
     Tipo_Dia = case_when(
       Feriado       == 1 ~ "Feriado",
-      Tolerancia    == 1 ~ "Toler‚ncia",
+      Tolerancia    == 1 ~ "Toler√¢ncia",
       Ponte         == 1 ~ "Ponte",
       Jan_Regresso  == 1 ~ "Regresso Jan.",
       Dez_FimAno    == 1 ~ "Fim de Ano",
@@ -741,38 +741,38 @@ plot_data <- tabela_mestra %>%
 p1 <- ggplot(plot_data, aes(x = Data)) +
   geom_line(aes(y = ADD_Total,        colour = "Observado"),
             linewidth = 0.4, alpha = 0.6) +
-  geom_line(aes(y = Baseline_Clinico, colour = "Prev. sÛ Gripe"),
+  geom_line(aes(y = Baseline_Clinico, colour = "Prev. s√≥ Gripe"),
             linewidth = 0.8, linetype = "dashed") +
   geom_line(aes(y = Fitted_Completo,  colour = "Prev. Modelo Completo"),
             linewidth = 0.7) +
   geom_point(
     data = filter(plot_data,
-                  Tipo_Dia %in% c("Feriado","Toler‚ncia","Ponte",
+                  Tipo_Dia %in% c("Feriado","Toler√¢ncia","Ponte",
                                   "Regresso Jan.","Fim de Ano")),
     aes(y = ADD_Total, shape = Tipo_Dia, colour = Tipo_Dia),
     size = 2.5
   ) +
   scale_colour_manual(values = c(
     "Observado"              = "grey40",
-    "Prev. sÛ Gripe"         = "steelblue",
+    "Prev. s√≥ Gripe"         = "steelblue",
     "Prev. Modelo Completo"  = "tomato",
     "Feriado"                = "navy",
-    "Toler‚ncia"             = "darkorchid",
+    "Toler√¢ncia"             = "darkorchid",
     "Ponte"                  = "darkorange",
     "Regresso Jan."          = "darkgreen",
     "Fim de Ano"             = "sienna"
   )) +
   scale_shape_manual(values = c(
     "Feriado"        = 17,
-    "Toler‚ncia"     = 18,
+    "Toler√¢ncia"     = 18,
     "Ponte"          = 15,
     "Regresso Jan."  = 8,
     "Fim de Ano"     = 4
   )) +
   labs(
     title    = "ADD Observadas vs Previstas (SARIMAX v5)",
-    subtitle = "SeparaÁ„o entre efeito clÌnico (Gripe) e efeito de conveniÍncia (calend·rio)",
-    x = "Data", y = "N∫ de ADD emitidas",
+    subtitle = "Separa√ß√£o entre efeito cl√≠nico (Gripe) e efeito de conveni√™ncia (calend√°rio)",
+    x = "Data", y = "N¬∫ de ADD emitidas",
     colour = NULL, shape = "Tipo de dia"
   ) +
   theme_minimal(base_size = 12) +
@@ -783,12 +783,12 @@ ggsave("grafico_ADD_vs_previsto.png", p1, width = 14, height = 6, dpi = 300)
 
 
 # -----------------------------------------------------------------------------
-# 17. GR¡FICO 2 - Perfil semanal   [v5-4]
+# 17. GR√ÅFICO 2 - Perfil semanal   [v5-4]
 # -----------------------------------------------------------------------------
-# [v5-4] LÛgica adaptativa:
-#   - Se Quarta_Comum È significativa (p<0.05): destaca Segunda E Quarta
-#   - Se Quarta_Comum n„o È significativa: destaca apenas Segunda,
-#     e legenda reflecte a narrativa de conveniÍncia de inÌcio de semana
+# [v5-4] L√≥gica adaptativa:
+#   - Se Quarta_Comum √© significativa (p<0.05): destaca Segunda E Quarta
+#   - Se Quarta_Comum n√£o √© significativa: destaca apenas Segunda,
+#     e legenda reflecte a narrativa de conveni√™ncia de in√≠cio de semana
 
 beta_seg <- resultados_beta %>%
   filter(Variavel == "Segunda_Comum") %>%
@@ -821,7 +821,7 @@ perfil_semanal <- tabela_mestra %>%
       dow_n == 1 ~ paste0("Segunda (??=+", beta_seg, "***)"),
       dow_n == 3 & qua_sig ~
         paste0("Quarta (??=+", beta_qua, ", p<0.05)"),
-      TRUE ~ "Outros dias ˙teis"
+      TRUE ~ "Outros dias √∫teis"
     )
   )
 
@@ -831,26 +831,26 @@ label_qua <- if (qua_sig) paste0("Quarta (??=+", beta_qua, ", p<0.05)") else NUL
 cores_fill <- if (qua_sig) {
   setNames(
     c("#e63946", "#f4a261", "grey70"),
-    c(label_seg, label_qua, "Outros dias ˙teis")
+    c(label_seg, label_qua, "Outros dias √∫teis")
   )
 } else {
   setNames(
     c("#e63946", "grey70"),
-    c(label_seg, "Outros dias ˙teis")
+    c(label_seg, "Outros dias √∫teis")
   )
 }
 
 subtitulo <- if (qua_sig) {
   paste0(
     "Segunda e Quarta apresentam volumes superiores - consistente com\n",
-    "maximizaÁ„o da ausÍncia efectiva (ADD de 3 dias):\n",
+    "maximiza√ß√£o da aus√™ncia efectiva (ADD de 3 dias):\n",
     "  Segunda: cobre Seg+Ter+Qua  |  Quarta: cobre Qua+Qui+Sex+fds"
   )
 } else {
   paste0(
     "Segunda apresenta volume superior (??=+", beta_seg, "***) - consistente com\n",
     "prolongamento do fim-de-semana via ADD de 3 dias (Seg+Ter+Qua).\n",
-    "Efeito de Quarta n„o confirmado nesta especificaÁ„o (p=",
+    "Efeito de Quarta n√£o confirmado nesta especifica√ß√£o (p=",
     round(p_qua, 3), ")."
   )
 }
@@ -862,10 +862,10 @@ p2 <- ggplot(perfil_semanal, aes(x = dow, y = Media, fill = Destaque)) +
                 width = 0.2, colour = "grey30") +
   scale_fill_manual(values = cores_fill) +
   labs(
-    title    = "Perfil semanal de ADD emitidas (dias ˙teis)",
+    title    = "Perfil semanal de ADD emitidas (dias √∫teis)",
     subtitle = subtitulo,
     x    = "Dia da semana",
-    y    = "MÈdia di·ria de ADD emitidas",
+    y    = "M√©dia di√°ria de ADD emitidas",
     fill = NULL
   ) +
   theme_minimal(base_size = 12) +
@@ -874,7 +874,7 @@ p2 <- ggplot(perfil_semanal, aes(x = dow, y = Media, fill = Destaque)) +
 print(p2)
 ggsave("grafico_perfil_semanal.png", p2, width = 8, height = 5, dpi = 300)
 
-cat("\n??? Gr·ficos guardados:\n")
+cat("\n??? Gr√°ficos guardados:\n")
 cat("   grafico_ADD_vs_previsto.png\n")
 cat("   grafico_perfil_semanal.png\n")
 
@@ -897,5 +897,5 @@ cat("   impacto_economico.csv\n")
 cat("   resumo_cenarios_custo.csv\n")
 
 cat("\n============================================================\n")
-cat(" PIPELINE v5 CONCLUÕDA\n")
+cat(" PIPELINE v5 CONCLU√çDA\n")
 cat("============================================================\n")
