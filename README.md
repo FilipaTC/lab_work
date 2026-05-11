@@ -19,7 +19,7 @@ Since 2022, the SNS 24 app and portal allow Portuguese workers to self-declare u
 ```
 ├── Pipeline v5/                        ← Pipeline version 5
 │   ├── code/
-│   │   ├── pipeline_sarimax_v5.R
+│   │   └── pipeline_sarimax_v5.R
 │   ├── outputs/
 │   │   ├── grafico_ADD_vs_previsto_v5.png
 │   │   ├── grafico_perfil_semanal_v5.png
