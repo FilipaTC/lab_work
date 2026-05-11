@@ -44,8 +44,8 @@ Since 2022, the SNS 24 app and portal allow Portuguese workers to self-declare u
 
 | Dataset | Source | Variables used | Period |
 |---|---|---|---|
-| ADD — Self-Declared Disease Notifications | [SNS Transparency Portal](https://transparencia.sns.gov.pt) | `Nº ADD Emitidas` (daily total) | 2022 – 2026 |
-| Flu Consultations at Primary Care | [SNS Transparency Portal](https://transparencia.sns.gov.pt) | `Nº Consultas Gripe nos CSP` (daily, by region) | 2022 – 2026 |
+| ADD — Self-Declared Disease Notifications | [SNS Transparency Portal](https://transparencia.sns.gov.pt) | `Nº ADD Emitidas` (daily total) | 2023 – 2026 |
+| Flu Consultations at Primary Care | [SNS Transparency Portal](https://transparencia.sns.gov.pt) | `Nº Consultas Gripe nos CSP` (daily, by region) | 2016 – 2026 |
 
 Both datasets are publicly available and were downloaded as CSV. The two series are merged by date (`inner_join`). Days present in ADD data but absent from flu data are audited before exclusion.
 
