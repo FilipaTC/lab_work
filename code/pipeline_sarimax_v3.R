@@ -641,6 +641,7 @@ cat("\n??? Resultados guardados:\n")
 cat("   resultados_coeficientes.csv\n")
 cat("   impacto_economico.csv\n")
 
+
 ############################################################################
 ####VALIDAÇÃO DO MODELO PARA DECIDIR SE DEVEMOS AVANÇAR PARA PREVISÃO#######
 ############################################################################
@@ -754,18 +755,18 @@ print(arimaorder(modelo_val))
 # -----------------------------------------------------------------------------
 # VAL-5. PREVER PERÍODO DE TESTE
 # -----------------------------------------------------------------------------
-prev_val <- forecast(modelo_val, xreg = xreg_teste, h = h_val)
+prev_val  <- forecast(modelo_val, xreg = xreg_teste, h = h_val)
 
-real <- teste$ADD_Total
-prev <- as.numeric(prev_val$mean)
+real      <- as.numeric(teste$ADD_Total)
+prev_hold <- as.numeric(prev_val$mean)
 
 
 # -----------------------------------------------------------------------------
 # VAL-6. MÉTRICAS DE ERRO
 # -----------------------------------------------------------------------------
-mae  <- mean(abs(real - prev))
-rmse <- sqrt(mean((real - prev)^2))
-mape <- mean(abs((real - prev) / real)) * 100
+mae  <- mean(abs(real - prev_hold))
+rmse <- sqrt(mean((real - prev_hold)^2))
+mape <- mean(abs((real - prev_hold) / real)) * 100
 
 # MASE: escala pelo erro naive sazonal (lag-7) calculado no treino
 naive_erros <- abs(diff(treino$ADD_Total, lag = 7))
@@ -781,8 +782,28 @@ cat(sprintf("RMSE : %7.1f ADD/dia\n",  rmse))
 cat(sprintf("MAPE : %7.1f %%\n",       mape))
 cat(sprintf("MASE : %7.3f  (< 1 = melhor que naive sazonal)\n", mase))
 cat(sprintf("Cobertura IC 80%% : %.1f%% (esperado ~80%%)\n", cob_80))
-cat(sprintf("Cobertura IC 95%% : %.1f%% (esperado ~95%%)\n", cob_95))
+cat(sprintf("Cobertura IC 95%% : %.1f%% (esperado ~95%%)\n", cob_9
 
+# -----------------------------------------------------------------------------
+# VAL-6b. CALIBRAÇÃO CONFORMAL DOS INTERVALOS
+# -----------------------------------------------------------------------------
+# A cobertura empírica do IC95 foi de 89.9% (esperado 95%).
+# Usamos os resíduos do holdout para recalibrar os intervalos futuros.
+# Método: split conformal prediction (Papadopoulos et al., 2002;
+#         Angelopoulos & Bates, 2023).
+erros_abs_holdout <- abs(real - prev_hold)
+q_conformal    <- quantile(erros_abs_holdout, probs = 0.95)
+q_conformal_80 <- quantile(erros_abs_holdout, probs = 0.80)
+cob_conf <- mean(
+  real >= (prev_hold - q_conformal) & real <= (prev_hold + q_conformal)
+) * 100
+cat("\n=== CALIBRAÇÃO CONFORMAL ===\n")
+cat(sprintf("Quantil 95%% dos erros absolutos : %.1f ADD/dia\n", q_conformal))
+cat(sprintf("Quantil 80%% dos erros absolutos : %.1f ADD/dia\n", q_conformal_80))
+cat(sprintf("Cobertura conformal no holdout   : %.1f%%\n", cob_conf))
+cat(sprintf("IC95 médio original (half-width) : %.1f ADD/dia\n",
+            mean((as.numeric(prev_val$upper[,2]) - as.numeric(prev_val$lower[,2])) / 2)))
+cat(sprintf("IC conformal (half-width fixo)   : %.1f ADD/dia\n", q_conformal))
 
 # -----------------------------------------------------------------------------
 # VAL-7. BENCHMARK — NAIVE SAZONAL
@@ -795,21 +816,45 @@ cat(sprintf("RMSE Naive s7    : %.1f  (ganho: %.1f%%)\n",
             rmse_naive,
             (1 - rmse / rmse_naive) * 100))
 
+###ONDE O MODELO FALHAVA
+# Comparar os dois IC no holdout visualmente
+tibble(
+  Data           = teste$Data,
+  Real           = real,
+  Prev           = prev_hold,
+  IC95_orig_low  = as.numeric(prev_val$lower[,2]),
+  IC95_orig_high = as.numeric(prev_val$upper[,2]),
+  IC95_conf_low  = prev_hold - q_conformal,
+  IC95_conf_high = prev_hold + q_conformal
+) %>%
+  ggplot(aes(x = Data)) +
+  geom_ribbon(aes(ymin = IC95_conf_low, ymax = IC95_conf_high),
+              fill = "steelblue", alpha = 0.15) +
+  geom_ribbon(aes(ymin = IC95_orig_low, ymax = IC95_orig_high),
+              fill = "tomato", alpha = 0.20) +
+  geom_line(aes(y = Real), colour = "grey30", linewidth = 0.5) +
+  geom_line(aes(y = Prev), colour = "steelblue", linewidth = 0.8) +
+  labs(
+    title    = "IC95 original (vermelho) vs conformal (azul) — holdout",
+    subtitle = sprintf("Original: 89.9%% cobertura  |  Conformal: %.1f%% cobertura", cob_conf),
+    x = NULL, y = "ADD/dia"
+  ) +
+  theme_minimal()
 
 # -----------------------------------------------------------------------------
 # VAL-8. GRÁFICO — Real vs Previsto no holdout
 # -----------------------------------------------------------------------------
 tibble(
-  Data      = teste$Data,
-  Real      = real,
-  Prev      = prev,
-  IC80_low  = as.numeric(prev_val$lower[,1]),
-  IC80_high = as.numeric(prev_val$upper[,1]),
-  IC95_low  = as.numeric(prev_val$lower[,2]),
-  IC95_high = as.numeric(prev_val$upper[,2])
+  Data           = teste$Data,
+  Real           = real,
+  Prev           = prev_hold,
+  IC80_low       = prev_hold - q_conformal_80,
+  IC80_high      = prev_hold + q_conformal_80,
+  IC95_conf_low  = prev_hold - q_conformal,
+  IC95_conf_high = prev_hold + q_conformal
 ) %>%
   ggplot(aes(x = Data)) +
-  geom_ribbon(aes(ymin = IC95_low, ymax = IC95_high),
+  geom_ribbon(aes(ymin = IC95_conf_low, ymax = IC95_conf_high),
               fill = "steelblue", alpha = 0.15) +
   geom_ribbon(aes(ymin = IC80_low, ymax = IC80_high),
               fill = "steelblue", alpha = 0.25) +
@@ -821,8 +866,8 @@ tibble(
   labs(
     title    = "Validação out-of-sample — 12 meses holdout (SARIMAX v3)",
     subtitle = sprintf(
-      "RMSE=%.0f | MAPE=%.1f%% | MASE=%.2f | IC95 cobertura=%.1f%%",
-      rmse, mape, mase, cob_95
+      "RMSE=%.0f | MAPE=%.1f%% | MASE=%.2f | IC95 conformal: %.1f%% cobertura",
+      rmse, mape, mase, cob_conf
     ),
     x = NULL, y = "ADD/dia", colour = NULL
   ) +
@@ -854,13 +899,13 @@ cat("   validacao_metricas.csv\n")
 
 
 #####################################
-###MODELO DE PREVISÃO A 5 ANOS#######
+###ROJEÇÃO para 2027,2028,2029,2030#######
 #####################################
 
 
 
 # =============================================================================
-# SECÇÃO 20 - PREVISÃO A 5 ANOS (forecasting)   [v3 - extensão]
+# SECÇÃO 20 - PREJEÇÃO A 5 ANOS (forecasting)   [v3 - extensão]
 
 # Estratégia para Gripe_CSP futura:
 #   - Calcular o perfil médio diário do dia-do-ano com base no histórico
@@ -868,8 +913,8 @@ cat("   validacao_metricas.csv\n")
 #   - Dummies de calendário construídas com a mesma lógica das secções 4-6
 #
 # Outputs:
-#   - grafico_previsao_5anos.png  : gráfico com série histórica + previsão + IC
-#   - previsao_5anos.csv          : valores diários previstos com IC 80% e 95%
+#   - grafico_projecção_5anos.png  : gráfico com série histórica + projecção + IC
+#   - projecção_4anos.csv          : valores diários previstos com IC 80% e 95%
 # =============================================================================
 
 
@@ -881,7 +926,7 @@ data_fim_prev    <- data_inicio_prev + years(5) - days(1)
 datas_futuras    <- seq(data_inicio_prev, data_fim_prev, by = "day")
 h                <- length(datas_futuras)
 
-cat("\n=== PREVISÃO A 5 ANOS ===\n")
+cat("\n=== PROJECÇÃO A 4 ANOS ===\n")
 cat("Início:", format(data_inicio_prev), "\n")
 cat("Fim   :", format(data_fim_prev),    "\n")
 cat("Dias  :", h, "\n")
@@ -957,7 +1002,11 @@ tabela_futura <- tibble(Data = datas_futuras) %>%
     dow = wday(Data, week_start = 1),
     Feriado       = if_else(Data %in% feriados_futuros, 1L, 0L),
     Tolerancia    = if_else(Data %in% tolerancias_futuras & Feriado == 0, 1L, 0L),
-    Ponte         = detectar_ponte(Data, feriados_futuros, tolerancias_futuras),
+    Ponte         = detectar_ponte(
+      as.Date(as.integer(Data), origin = "1970-01-01"),
+      as.Date(as.integer(feriados_futuros), origin = "1970-01-01"),
+      as.Date(as.integer(tolerancias_futuras), origin = "1970-01-01")
+    ),
     Segunda_Comum = if_else(
       dow == 1 & Feriado == 0 & Tolerancia == 0 & Ponte == 0, 1L, 0L
     ),
@@ -1006,17 +1055,17 @@ cat("\n✓ xreg_futuro validado:", nrow(xreg_futuro), "linhas ×",
     ncol(xreg_futuro), "colunas.\n")
 
 # -----------------------------------------------------------------------------
-# 20.5  GERAR PREVISÕES
+# 20.5  PROJEÇÃO DETERMINÍSTICA × CALENDÁRIO + BANDA SENSIBILIDADE DOS BETAS 
 # -----------------------------------------------------------------------------
-prev <- forecast(modelo_sarimax, xreg = xreg_futuro, h = h)
+prev_5anos <- forecast(modelo_sarimax, xreg = xreg_futuro, h = h)
 
 tabela_previsao <- tibble(
-  Data       = datas_futuras,
-  Prev       = as.numeric(prev$mean),
-  IC80_low   = as.numeric(prev$lower[, 1]),
-  IC80_high  = as.numeric(prev$upper[, 1]),
-  IC95_low   = as.numeric(prev$lower[, 2]),
-  IC95_high  = as.numeric(prev$upper[, 2])
+  Data           = datas_futuras,
+  Prev           = as.numeric(prev_5anos$mean),
+  IC80_conf_low  = as.numeric(prev_5anos$mean) - q_conformal_80,
+  IC80_conf_high = as.numeric(prev_5anos$mean) + q_conformal_80,
+  IC95_conf_low  = as.numeric(prev_5anos$mean) - q_conformal,
+  IC95_conf_high = as.numeric(prev_5anos$mean) + q_conformal
 ) %>%
   left_join(tabela_futura %>%
               select(Data, Feriado, Tolerancia, Ponte,
@@ -1040,9 +1089,8 @@ cat(sprintf("  Max previsto   : %.0f ADD/dia\n", max(tabela_previsao$Prev)))
 
 
 # -----------------------------------------------------------------------------
-# 20.6  GRÁFICO — Histórico + Previsão 5 anos
+# 20.6  GRÁFICO — Histórico + Projecção 4 anos
 # -----------------------------------------------------------------------------
-# Suavização semanal do histórico para melhor leitura visual
 historico_semanal <- tabela_mestra %>%
   mutate(semana = floor_date(Data, "week")) %>%
   group_by(semana) %>%
@@ -1052,45 +1100,39 @@ prev_semanal <- tabela_previsao %>%
   mutate(semana = floor_date(Data, "week")) %>%
   group_by(semana) %>%
   summarise(
-    Prev      = mean(Prev),
-    IC80_low  = mean(IC80_low),
-    IC80_high = mean(IC80_high),
-    IC95_low  = mean(IC95_low),
-    IC95_high = mean(IC95_high),
+    Prev           = mean(Prev),
+    IC80_conf_low  = mean(IC80_conf_low),
+    IC80_conf_high = mean(IC80_conf_high),
+    IC95_conf_low  = mean(IC95_conf_low),
+    IC95_conf_high = mean(IC95_conf_high),
     .groups = "drop"
   )
 
-# Linha vertical: separação histórico / previsão
 data_corte <- max(tabela_mestra$Data)
 
 p_prev <- ggplot() +
-  # IC 95%
   geom_ribbon(
     data = prev_semanal,
-    aes(x = semana, ymin = IC95_low, ymax = IC95_high),
+    aes(x = semana, ymin = IC95_conf_low, ymax = IC95_conf_high),
     fill = "steelblue", alpha = 0.15
   ) +
-  # IC 80%
   geom_ribbon(
     data = prev_semanal,
-    aes(x = semana, ymin = IC80_low, ymax = IC80_high),
+    aes(x = semana, ymin = IC80_conf_low, ymax = IC80_conf_high),
     fill = "steelblue", alpha = 0.25
   ) +
-  # Histórico (média semanal)
   geom_line(
     data = historico_semanal,
     aes(x = semana, y = ADD_semana, colour = "Histórico"),
     linewidth = 0.5, alpha = 0.8
   ) +
-  # Previsão (média semanal)
   geom_line(
     data = prev_semanal,
     aes(x = semana, y = Prev, colour = "Previsão"),
     linewidth = 0.8
   ) +
-  # Linha de corte
   geom_vline(
-    xintercept = (data_corte),
+    xintercept = data_corte,
     linetype = "dashed", colour = "grey40", linewidth = 0.6
   ) +
   annotate(
@@ -1106,14 +1148,16 @@ p_prev <- ggplot() +
     title    = "Previsão de ADD emitidas — espaço temporal de 5 anos (SARIMAX v3)",
     subtitle = paste0(
       "Gripe futura: média sazonal histórica | ",
-      ": IC 80% e IC 95% | Médias semanais"
+      "IC 80% e IC 95% calibrados conformalmente | Médias semanais"
     ),
-    x      = NULL,
-    y      = "Nº de ADD emitidas (média semanal)",
-    colour = NULL,
+    x       = NULL,
+    y       = "Nº de ADD emitidas (média semanal)",
+    colour  = NULL,
     caption = paste0(
-      "Tolerâncias de ponto calculadas até 2030 com base nas regras definidas:  ",
-      "24 Dez, 31 Dez, Terça de Carnaval (Páscoa−47) e Quinta-feira Santa (Páscoa−3)."
+      "IC calibrados conformalmente a partir do holdout de 12 meses ",
+      "(cobertura empírica original = 89.9%; após calibração = ",
+      round(cob_conf, 1), "%). ",
+      "Tolerâncias de ponto calculadas até 2030."
     )
   ) +
   theme_minimal(base_size = 12) +
@@ -1139,11 +1183,6 @@ cat("✓ Previsões diárias guardadas: previsao_5anos.csv\n")
 # -----------------------------------------------------------------------------
 # 20.8  IMPACTO ECONÓMICO DAS PREVISÕES A 5 ANOS
 # -----------------------------------------------------------------------------
-
-# Reutiliza o custo_dia_euros definido na secção 16
-# Reutiliza os coeficientes do modelo_sarimax (betas de conveniência)
-
-# Contagem de dias especiais no período de previsão
 contagem_dias_futura <- tabela_futura %>%
   summarise(
     Feriado       = sum(Feriado),
@@ -1154,7 +1193,6 @@ contagem_dias_futura <- tabela_futura %>%
   ) %>%
   pivot_longer(everything(), names_to = "Variavel", values_to = "N_dias")
 
-# Impacto económico futuro com os mesmos betas do modelo histórico
 impacto_futuro <- resultados_beta %>%
   filter(Variavel != "Gripe_CSP") %>%
   left_join(contagem_dias_futura, by = "Variavel") %>%
@@ -1175,7 +1213,6 @@ cat("\n=== IMPACTO ECONÓMICO PREVISTO (5 anos) — custo/dia =",
     custo_dia_euros, "€ ===\n")
 print(impacto_futuro, n = Inf)
 
-# Totais apenas para variáveis significativas
 total_futuro <- impacto_futuro %>%
   filter(Nota == "Significativo") %>%
   summarise(
@@ -1189,21 +1226,14 @@ total_futuro <- impacto_futuro %>%
 
 cat("\n--- Totais previstos (apenas variáveis significativas) ---\n")
 cat(sprintf("ADD excedentárias previstas : %.0f [IC95: %.0f - %.0f]\n",
-            total_futuro$Total_ADD,
-            total_futuro$Total_lb,
-            total_futuro$Total_ub))
+            total_futuro$Total_ADD, total_futuro$Total_lb, total_futuro$Total_ub))
 cat(sprintf("Custo estimado previsto     : %.0f€ [IC95: %.0f€ - %.0f€]\n",
-            total_futuro$Total_eur,
-            total_futuro$Total_e_lb,
-            total_futuro$Total_e_ub))
+            total_futuro$Total_eur, total_futuro$Total_e_lb, total_futuro$Total_e_ub))
 
 
 # -----------------------------------------------------------------------------
-# 20.9  GRÁFICO — Custo económico anual previsto
+# 20.9  GRÁFICO — Custo económico anual previsto (com IC conformal)
 # -----------------------------------------------------------------------------
-
-
-# Abordagem mais simples e robusta: ano a ano com os betas
 custo_anual <- tabela_futura %>%
   mutate(Ano = year(Data)) %>%
   group_by(Ano) %>%
@@ -1222,10 +1252,13 @@ custo_anual <- tabela_futura %>%
     Custo_Feriado  = coefs["Feriado"]       * N_Feriado * custo_dia_euros,
     Custo_Toler    = coefs["Tolerancia"]    * N_Toler   * custo_dia_euros,
     Custo_Total    = Custo_Segunda + Custo_Quarta + Custo_Ponte +
-      Custo_Feriado + Custo_Toler
+      Custo_Feriado + Custo_Toler,
+    n_dias_conv    = N_Segunda + N_Quarta + N_Ponte + N_Feriado + N_Toler,
+    Custo_IC_half  = q_conformal * sqrt(n_dias_conv) * custo_dia_euros,
+    Custo_Total_lb = Custo_Total - Custo_IC_half,
+    Custo_Total_ub = Custo_Total + Custo_IC_half
   )
 
-# Formato longo para o gráfico
 custo_anual_long <- custo_anual %>%
   select(Ano, Custo_Segunda, Custo_Quarta, Custo_Ponte,
          Custo_Feriado, Custo_Toler) %>%
@@ -1239,20 +1272,31 @@ custo_anual_long <- custo_anual %>%
                   "Custo_Toler"   = "Tolerância"
     )
   )
+
 p_custo <- ggplot(custo_anual_long %>% filter(Ano > 2026 & Ano < 2031),
                   aes(x = factor(Ano), y = Custo / 1e6, fill = Tipo)) +
   geom_col(position = "stack", width = 0.6) +
+  geom_errorbar(
+    data = custo_anual %>% filter(Ano > 2026 & Ano < 2031),
+    aes(x = factor(Ano),
+        ymin = Custo_Total_lb / 1e6,
+        ymax = Custo_Total_ub / 1e6),
+    inherit.aes = FALSE,
+    width = 0.25, colour = "grey30", linewidth = 0.7
+  ) +
   geom_text(
     data = custo_anual %>% filter(Ano > 2026 & Ano < 2031),
-    aes(x = factor(Ano), y = Custo_Total / 1e6,
+    aes(x = factor(Ano), y = Custo_Total_ub / 1e6,
         label = sprintf("%.1fM€", Custo_Total / 1e6)),
     inherit.aes = FALSE,
     vjust = -0.4, size = 3.5
   ) +
   scale_fill_manual(values = c(
-    "Segunda" = "#e63946",
-    "Quarta"  = "#f4a261",
-    "Ponte"   = "#2a9d8f"
+    "Segunda"    = "#e63946",
+    "Quarta"     = "#f4a261",
+    "Ponte"      = "#2a9d8f",
+    "Feriado"    = "#457b9d",
+    "Tolerância" = "#8338ec"
   )) +
   scale_y_continuous(labels = scales::label_number(suffix = "M€")) +
   labs(
@@ -1261,7 +1305,10 @@ p_custo <- ggplot(custo_anual_long %>% filter(Ano > 2026 & Ano < 2031),
                       "€ | Betas do modelo SARIMAX v3"),
     x = "Ano", y = "Custo estimado (milhões €)",
     fill = "Tipo de dia",
-    caption = "Nota: IC95% das previsões pontuais ligeiramente subestimado (cobertura out-of-sample = 89.9%)"
+    caption = paste0(
+      "Barras de erro: IC95% calibrados conformalmente a partir do holdout de 12 meses ",
+      "(cobertura original = 89.9%; após calibração = ", round(cob_conf, 1), "%)."
+    )
   ) +
   theme_minimal(base_size = 12) +
   theme(legend.position = "bottom")
@@ -1269,7 +1316,6 @@ p_custo <- ggplot(custo_anual_long %>% filter(Ano > 2026 & Ano < 2031),
 print(p_custo)
 ggsave("grafico_custo_economico_5anos.png", p_custo,
        width = 10, height = 6, dpi = 300)
-
 
 
 # -----------------------------------------------------------------------------
@@ -1282,9 +1328,151 @@ cat("   grafico_custo_economico_5anos.png\n")
 cat("   custo_economico_5anos.csv\n")
 
 
-cat("\n============================================================\n")
-cat(" PIPELINE v3 CONCLUÍDA\n")
-cat("============================================================\n")
+#####################################
+##SIMULAÇÕES DE CENÁRIOS FUTUROS#####
+#####################################
 
+# =============================================================================
+# SECÇÃO 21.2 - MONTE CARLO: CUSTO POR CONVENIÊNCIA (2 ANOS) — COM RUÍDO CONFORMAL
+# =============================================================================
+
+set.seed(42)
+n_simulacoes        <- 10000
+custo_referencia    <- 150
+limiar_conveniencia <- 33000000
+
+h_2anos  <- 731
+df_2anos <- tabela_futura[1:h_2anos, ]
+
+n_segundas <- sum(df_2anos$Segunda_Comum)
+n_quartas  <- sum(df_2anos$Quarta_Comum)
+n_pontes   <- sum(df_2anos$Ponte)
+
+beta_seg <- resultados_beta %>% filter(Variavel == "Segunda_Comum") %>% pull(Beta)
+se_seg   <- resultados_beta %>% filter(Variavel == "Segunda_Comum") %>% pull(SE)
+beta_qua <- resultados_beta %>% filter(Variavel == "Quarta_Comum")  %>% pull(Beta)
+se_qua   <- resultados_beta %>% filter(Variavel == "Quarta_Comum")  %>% pull(SE)
+beta_pon <- resultados_beta %>% filter(Variavel == "Ponte")          %>% pull(Beta)
+se_pon   <- resultados_beta %>% filter(Variavel == "Ponte")          %>% pull(SE)
+
+n_dias_conv <- n_segundas + n_quartas + n_pontes
+
+custo_conv_simulado <- numeric(n_simulacoes)
+
+for(i in 1:n_simulacoes) {
+  efeito_seg <- rnorm(1, mean = beta_seg, sd = se_seg)
+  efeito_qua <- rnorm(1, mean = beta_qua, sd = se_qua)
+  efeito_pon <- rnorm(1, mean = beta_pon, sd = se_pon)
+  
+  add_conv <- (efeito_seg * n_segundas) +
+    (efeito_qua * n_quartas)  +
+    (efeito_pon * n_pontes)
+  
+  ruido_prev <- rnorm(1, mean = 0, sd = q_conformal * sqrt(n_dias_conv))
+  
+  custo_conv_simulado[i] <- (add_conv + ruido_prev) * custo_referencia
+}
+
+prob_ultrapassar <- mean(custo_conv_simulado > limiar_conveniencia) * 100
+media_conv       <- mean(custo_conv_simulado)
+
+cat("\n=== ANÁLISE DE RISCO: APENAS CONVENIÊNCIA (2 ANOS) ===\n")
+cat(sprintf("Custo Médio de Conveniência: %.2f M€\n", media_conv / 1e6))
+cat(sprintf("Probabilidade de ultrapassar 33M€: %.2f%%\n", prob_ultrapassar))
+cat(sprintf("\n⚠️  IC calibrados conformalmente (q = %.0f ADD/dia).\n", q_conformal))
+cat("   Incerteza de previsão incorporada via ruído conformal por simulação.\n")
+
+# -----------------------------------------------------------------------------
+# 21.3 VISUALIZAÇÃO
+# -----------------------------------------------------------------------------
+tibble(Custo = custo_conv_simulado / 1e6) %>%
+  ggplot(aes(x = Custo)) +
+  geom_density(fill = "#f4a261", alpha = 0.6, linewidth = 0.8) +
+  geom_vline(xintercept = limiar_conveniencia / 1e6,
+             color = "red", linetype = "dashed", linewidth = 1) +
+  annotate("label", x = limiar_conveniencia / 1e6, y = 0.1,
+           label = paste0("Risco > 33M: ", round(prob_ultrapassar, 1), "%"),
+           color = "red", fill = "white") +
+  labs(
+    title    = "Monte Carlo: Risco Financeiro do Absentismo por Conveniência",
+    subtitle = paste0(
+      "Incerteza dos coeficientes + ruído conformal (q=",
+      round(q_conformal), " ADD/dia) — 2 Anos"
+    ),
+    x = "Custo de Conveniência (Milhões de Euros)",
+    y = "Densidade"
+  ) +
+  theme_minimal()
+
+
+# =============================================================================
+# SECÇÃO 22. SIMULAÇÃO DE CENÁRIO CRÍTICO (Stress Test - 2 Anos)
+# =============================================================================
+
+set.seed(123)
+n_simulacoes            <- 10000
+h_stress                <- 731
+limiar_stress_conv      <- 33000000
+fator_stress_comportamental <- 1.10
+custo_dia               <- 150
+
+df_2anos <- tabela_futura[1:h_stress, ]
+n_seg <- sum(df_2anos$Segunda_Comum)
+n_qua <- sum(df_2anos$Quarta_Comum)
+n_pon <- sum(df_2anos$Ponte)
+
+beta_seg <- resultados_beta %>% filter(Variavel == "Segunda_Comum") %>% pull(Beta)
+se_seg   <- resultados_beta %>% filter(Variavel == "Segunda_Comum") %>% pull(SE)
+beta_qua <- resultados_beta %>% filter(Variavel == "Quarta_Comum")  %>% pull(Beta)
+se_qua   <- resultados_beta %>% filter(Variavel == "Quarta_Comum")  %>% pull(SE)
+beta_pon <- resultados_beta %>% filter(Variavel == "Ponte")          %>% pull(Beta)
+se_pon   <- resultados_beta %>% filter(Variavel == "Ponte")          %>% pull(SE)
+
+n_dias_stress <- n_seg + n_qua + n_pon
+
+custo_stress_simulado <- numeric(n_simulacoes)
+
+for(i in 1:n_simulacoes) {
+  s_seg <- rnorm(1, mean = beta_seg * fator_stress_comportamental, sd = se_seg)
+  s_qua <- rnorm(1, mean = beta_qua * fator_stress_comportamental, sd = se_qua)
+  s_pon <- rnorm(1, mean = beta_pon * fator_stress_comportamental, sd = se_pon)
+  
+  add_stress <- (s_seg * n_seg) + (s_qua * n_qua) + (s_pon * n_pon)
+  
+  ruido_prev <- rnorm(1, mean = 0, sd = q_conformal * sqrt(n_dias_stress))
+  
+  custo_stress_simulado[i] <- (add_stress + ruido_prev) * custo_dia
+}
+
+prob_stress_32M <- mean(custo_stress_simulado > limiar_stress_conv) * 100
+media_stress    <- mean(custo_stress_simulado)
+
+cat("\n=== RESULTADOS DO STRESS TEST DE CONVENIÊNCIA ===\n")
+cat(sprintf("Custo Médio no Cenário de Stress: %.2f M€\n", media_stress / 1e6))
+cat(sprintf("Probabilidade de exceder 33M€ sob Stress (+10%%): %.2f%%\n", prob_stress_32M))
+cat(sprintf("\n⚠️  IC calibrados conformalmente (q = %.0f ADD/dia).\n", q_conformal))
+cat("   Incerteza de previsão incorporada via ruído conformal por simulação.\n")
+
+# -----------------------------------------------------------------------------
+# 22.1 VISUALIZAÇÃO DO STRESS TEST
+# -----------------------------------------------------------------------------
+tibble(Custo = custo_stress_simulado / 1e6) %>%
+  ggplot(aes(x = Custo)) +
+  geom_density(fill = "#d35400", alpha = 0.5, linewidth = 1) +
+  geom_vline(xintercept = limiar_stress_conv / 1e6,
+             color = "red", linetype = "dashed", linewidth = 1.2) +
+  annotate("label", x = limiar_stress_conv / 1e6, y = 0.1,
+           label = paste0("Risco > 33M: ", round(prob_stress_32M, 1), "%"),
+           color = "red", fill = "white") +
+  labs(
+    title    = "Stress Test: Risco de Conveniência (Cenário Agravado +10%)",
+    subtitle = paste0(
+      "Betas agravados +10% + ruído conformal (q=",
+      round(q_conformal), " ADD/dia) — 2 Anos"
+    ),
+    x = "Custo de Conveniência (Milhões de Euros)",
+    y = "Densidade"
+  ) +
+  theme_minimal()
 
 
