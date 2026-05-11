@@ -66,7 +66,7 @@ ADDₜ = ARIMA(p,d,q)(P,D,Q)_s
      + β₄·Ponteₜ               # binary: bridge day between holiday and weekend
      + β₅·Segunda_Comumₜ       # binary: regular Monday (not holiday/bridge)
      + β₆·Quarta_Comumₜ        # binary: regular Wednesday  [added in v3]
-     + Σ Fourier(K=3, f=365.25) # annual seasonality
+     + Σ Fourier(K=5, f=365.25) # annual seasonality
      + εₜ
 ```
 
@@ -94,11 +94,11 @@ Priority rule (to avoid overlap): **Public Holiday > Tolerance Day > Bridge Day 
 
 ```
 Excess ADDs  = β_dummy × N_days_in_period
-Economic cost = Excess ADDs × €120 / day
-95% CI       = (β ± 1.96 × SE) × N_days × €120
+Economic cost = Excess ADDs × €150 / day
+95% CI       = (β ± 1.96 × SE) × N_days × €150
 ```
 
-> ⚠️ **Assumption:** €120/day average labour cost per absent worker. This should be updated with sector-specific data from INE's *Inquérito ao Emprego* or employer records. Only statistically significant variables (p < 0.05) are interpreted causally.
+> ⚠️ **Assumption:** €150/day average labour cost per absent worker. This should be updated with sector-specific data from INE's *Inquérito ao Emprego* or employer records. Only statistically significant variables (p < 0.05) are interpreted causally.
 
 ---
 
@@ -133,12 +133,12 @@ source("code/pipeline_sarimax_v3.R")
 
 | Variable | β | p-value | Interpretation |
 |---|---|---|---|
-| Flu Consultations (Gripe) | +0.XX | < 0.001 | Clinical signal — genuine illness driver |
-| Public Holiday (Feriado) | −XXXX | < 0.001 | Day off → fewer ADDs submitted |
-| Tolerance Day (Tolerância) | +XXXX | < 0.001 | Bridge abuse around tolerance days |
-| Bridge Day (Ponte) | +XXXX | < 0.05 | Strategic absence for long weekend |
-| **Monday (Segunda_Comum)** | **+1,280** | **< 0.001** | **Post-weekend extension — strongest effect** |
-| **Wednesday (Quarta_Comum)** | **+826** | **< 0.001** | **Mid-week split strategy** |
+| Flu Consultations (Gripe) | 1.00 | < 0.001 | Clinical signal — genuine illness driver |
+| Public Holiday (Feriado) | −316​ | < 0.001 | Day off → fewer ADDs submitted |
+| Tolerance Day (Tolerância) | −584 | < 0.001 | Bridge around tolerance days |
+| Bridge Day (Ponte) | +458 | < 0.05 | Strategic absence for long weekend |
+| **Monday (Segunda_Comum)** | **+1379** | **< 0.001** | **Post-weekend extension — strongest effect** |
+| **Wednesday (Quarta_Comum)** | **+697​** | **< 0.001** | **Mid-week split strategy** |
 
 ---
 
