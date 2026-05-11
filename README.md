@@ -137,7 +137,7 @@ source("code/pipeline_sarimax_v3.R")
 | Flu Consultations (Gripe) | 1.00 | < 0.001 | Clinical signal — genuine illness driver |
 | Public Holiday (Feriado) | −316​ | < 0.001 | Day off → fewer ADDs submitted |
 | Tolerance Day (Tolerância) | −584 | < 0.001 | Bridge around tolerance days |
-| Bridge Day (Ponte) | +458 | < 0.05 | Strategic absence for long weekend |
+| Bridge Day (Ponte) | +458 | < 0.001 | Strategic absence for long weekend |
 | **Monday (Segunda_Comum)** | **+1379** | **< 0.001** | **Post-weekend extension — strongest effect** |
 | **Wednesday (Quarta_Comum)** | **+697​** | **< 0.001** | **Mid-week split strategy** |
 
