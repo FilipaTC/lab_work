@@ -53,7 +53,7 @@ Este documento regista os prompts utilizados no projeto. Foram consultados difer
 > "Reescreve o código tendo em conta estes resultados e o problema dos resíduos."
 
 
-## 🤖 ChatGPT (Foco: )
+## 🤖 ChatGPT (Foco: Atualização das pipelines)
 ### 1. K-fourier
 **Prompt:**
 > [Resultados do Ljung-Box test e do Box-Ljung test] Sugere melhorias para estes resultados.
