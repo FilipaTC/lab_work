@@ -6,7 +6,7 @@
 #   [v3-1]  Dummy Quarta_Comum adicionada ao modelo
 #   [v3-2]  Quarta_Pre_Especial testada e fundida com Quarta_Comum (não sig.)
 #   [v3-3]  Sexta_Comum removida do modelo (não significativa, p=0.167)
-#   [v3-4]  Dummies de outlier (|resíduo| > 3??) para tratar autocorrelação residual
+#   [v3-4]  Dummies de outlier (|resíduo| > 3σ) para tratar autocorrelação residual
 #   [v3-5]  Duas passagens do modelo: 1ª identifica outliers, 2ª incorpora-os
 #   [v3-6]  Impacto económico e gráfico actualizados para nova estrutura de dummies
 #   [v3-7]  Gráfico adicional: perfil semanal de ADD por tipo de dia
@@ -73,14 +73,14 @@ cat("Nº dias:", nrow(gripe_clean), "\n")
 # -----------------------------------------------------------------------------
 dias_add_excluidos <- anti_join(add_clean, gripe_clean, by = "Data")
 if (nrow(dias_add_excluidos) > 0) {
-  cat("\n??????  inner_join vai excluir", nrow(dias_add_excluidos),
+  cat("\nº  inner_join vai excluir", nrow(dias_add_excluidos),
       "dias com ADD mas sem registo de Gripe.\n")
   cat("   Distribuição por dia da semana dos dias excluídos:\n")
   dias_add_excluidos %>%
     mutate(dow = wday(Data, label = TRUE, week_start = 1)) %>%
     count(dow) %>%
     print()
-  cat("   ??? Avaliar se exclusão introduz viés antes de continuar.\n")
+  cat("Avaliar se exclusão introduz viés antes de continuar.\n")
 }
 
 tabela_mestra <- inner_join(add_clean, gripe_clean, by = "Data") %>%
@@ -95,7 +95,7 @@ dias_na_gripe <- sum(is.na(tabela_mestra$Gripe_CSP))
 if (dias_na_gripe > 0) {
   cat("??????  Atenção:", dias_na_gripe, "dias sem dados de Gripe_CSP.\n")
 } else {
-  cat("??? Sem valores em falta na coluna Gripe_CSP.\n")
+  cat("Sem valores em falta na coluna Gripe_CSP.\n")
 }
 
 
@@ -214,9 +214,9 @@ check_overlap <- tabela_mestra %>%
   filter(soma > 1)
 
 if (nrow(check_overlap) == 0) {
-  cat("\n??? Sem overlaps nas dummies.\n")
+  cat("\nSem overlaps nas dummies.\n")
 } else {
-  cat("\n??????  ATENÇÃO: overlaps detectados em", nrow(check_overlap), "dias!\n")
+  cat("\n ATENÇÃO: overlaps detectados em", nrow(check_overlap), "dias!\n")
   print(check_overlap)
 }
 
@@ -235,7 +235,7 @@ tabela_mestra %>%
 # 7. GUARDAR TABELA MESTRA
 # -----------------------------------------------------------------------------
 write_csv(tabela_mestra, "tabela_mestra_ADD.csv")
-cat("\n??? Tabela mestra guardada: tabela_mestra_ADD.csv\n")
+cat("\nTabela mestra guardada: tabela_mestra_ADD.csv\n")
 
 
 # -----------------------------------------------------------------------------
@@ -266,7 +266,7 @@ stopifnot(
   "xreg e y têm nº de linhas diferentes!" =
     nrow(xreg_1a_passagem) == length(y_semanal)
 )
-cat("\n??? Alinhamento xreg/y confirmado:", nrow(xreg_1a_passagem), "observações.\n")
+cat("\nAlinhamento xreg/y confirmado:", nrow(xreg_1a_passagem), "observações.\n")
 
 
 # -----------------------------------------------------------------------------
@@ -291,7 +291,7 @@ print(adf_result)
 # com outliers aditivos (cf. Chen & Liu, 1993).
 
 set.seed(42)
-cat("\n??? 1ª passagem: a identificar outliers (pode demorar 3-8 min)...\n")
+cat("\n1ª passagem: a identificar outliers (pode demorar 3-8 min)...\n")
 
 modelo_1a <- auto.arima(
   y_semanal,
@@ -339,7 +339,7 @@ if (length(outlier_dates) > 0) {
   cat("\n??? Dummies de outlier adicionadas:", ncol(outlier_dummies), "colunas.\n")
 } else {
   xreg_final <- xreg_1a_passagem
-  cat("\n??? Sem outliers a adicionar; xreg_final = xreg_1a_passagem.\n")
+  cat("\nSem outliers a adicionar; xreg_final = xreg_1a_passagem.\n")
 }
 
 stopifnot(
@@ -358,12 +358,12 @@ xreg_final <- apply(xreg_final, 2, as.numeric)
 cat("\nApós correcção:\n")
 print(sapply(as.data.frame(xreg_final), class))
 stopifnot(all(apply(xreg_final, 2, is.numeric)))
-cat("??? xreg_final é uma matriz numérica.\n")
+cat("xreg_final é uma matriz numérica.\n")
 # -----------------------------------------------------------------------------
 # 13. 2ª PASSAGEM - MODELO FINAL   [v3-5]
 # -----------------------------------------------------------------------------
 set.seed(42)
-cat("\n??? 2ª passagem: modelo final com outliers corrigidos (pode demorar alguns min)...\n")
+cat("\n2ª passagem: modelo final com outliers corrigidos (pode demorar alguns min)...\n")
 
 modelo_sarimax <- auto.arima(
   y_semanal,
@@ -375,7 +375,7 @@ modelo_sarimax <- auto.arima(
   trace         = TRUE
 )
 
-cat("\n??? Modelo final selecionado:\n")
+cat("\nModelo final selecionado:\n")
 summary(modelo_sarimax)
 
 arma_ord      <- arimaorder(modelo_sarimax)
@@ -399,10 +399,10 @@ cat("\n--- Ljung-Box corrigido (lag=14, fitdf =", n_params_arma, ") ---\n")
 print(lb_test)
 
 if (lb_test$p.value > 0.05) {
-  cat("??? Resíduos consistentes com ruído branco (p =",
+  cat("Resíduos consistentes com ruído branco (p =",
       round(lb_test$p.value, 4), ")\n")
 } else {
-  cat("??????  Autocorrelação residual ainda presente (p =",
+  cat("Autocorrelação residual ainda presente (p =",
       round(lb_test$p.value, 4), ")\n")
   cat("   O modelo é reportável mas a limitação deve ser declarada.\n")
   cat("   Nota metodológica sugerida:\n")
@@ -414,7 +414,7 @@ if (lb_test$p.value > 0.05) {
 
 
 # -----------------------------------------------------------------------------
-# 15. COEFICIENTES ?? - VARIÁVEIS DE INTERESSE
+# 15. COEFICIENTES β - VARIÁVEIS DE INTERESSE
 # -----------------------------------------------------------------------------
 # Nota metodológica: p-values por aproximação normal assimptótica (n > 500).
 
@@ -446,7 +446,7 @@ print(resultados_beta, n = Inf)
 
 nas_coef <- resultados_beta %>% filter(is.na(Beta))
 if (nrow(nas_coef) > 0) {
-  cat("\n??????  Coeficientes NA (possível colinearidade):\n")
+  cat("\nCoeficientes NA (possível colinearidade):\n")
   print(nas_coef$Variavel)
 }
 
@@ -462,7 +462,7 @@ if (nrow(nas_coef) > 0) {
 #   - IC a 95% propagado da incerteza do Beta (método delta).
 #   - Só variáveis com p < 0.05 são interpretadas causalmente.
 
-custo_dia_euros <- 150  # ??? substituir por valor documentado
+custo_dia_euros <- 150  # valor documentado
 
 contagem_dias <- tabela_mestra %>%
   summarise(
@@ -490,7 +490,7 @@ impacto_economico <- resultados_beta %>%
          ADD_excedentarias, ADD_exc_lb, ADD_exc_ub,
          Custo_euros, Custo_euros_lb, Custo_euros_ub, Nota)
 
-cat("\n=== IMPACTO ECONÓMICO ESTIMADO (custo/dia =", custo_dia_euros, "???) ===\n")
+cat("\n=== IMPACTO ECONÓMICO ESTIMADO (custo/dia =", custo_dia_euros, ") ===\n")
 print(impacto_economico, n = Inf)
 
 # Resumo: total das ADD de conveniência significativas
@@ -507,7 +507,7 @@ total_sig <- impacto_economico %>%
 cat("\n--- Totais (apenas variáveis significativas) ---\n")
 cat(sprintf("ADD excedentárias: %.0f [IC95: %.0f - %.0f]\n",
             total_sig$Total_ADD, total_sig$Total_lb, total_sig$Total_ub))
-cat(sprintf("Custo estimado:    %.0f??? [IC95: %.0f??? - %.0f???]\n",
+cat(sprintf("Custo estimado:    %.0f [IC95: %.0f - %.0f]\n",
             total_sig$Total_eur, total_sig$Total_e_lb, total_sig$Total_e_ub))
 
 
@@ -593,8 +593,8 @@ perfil_semanal <- tabela_mestra %>%
   ) %>%
   mutate(
     Destaque = case_when(
-      as.integer(dow) == 1 ~ "Segunda (??=+1280***)",
-      as.integer(dow) == 3 ~ "Quarta (??=+826***)",
+      as.integer(dow) == 1 ~ "Segunda (β=+1280***)",
+      as.integer(dow) == 3 ~ "Quarta (β=+826***)",
       TRUE                 ~ "Outros dias úteis"
     )
   )
